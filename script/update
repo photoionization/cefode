@@ -15,6 +15,17 @@ fi
 export GYP_GENERATORS=ninja
 
 progress 'Updating source code'
+cd "$ROOT/src"
+CURRENT_HEAD=`git log -1 | head -n 1 | awk '{ print $2 }'`
+REMOTE_HEAD=`git ls-remote origin -h refs/heads/master | awk '{ print $1 }'`
+if [[ $? -ne 0 ]]; then
+  fail 'Cannot get remote head'
+elif [[ $REMOTE_HEAD == $CURRENT_HEAD ]]; then
+  success 'Already at the newest commit'
+  exit
+fi
+
+info 'Your local changes will be overwritten'
 if python "$ROOT/depot_tools/gclient.py" sync --force
 then success 'Source code updated'
 else fail 'Error when updating code'
