@@ -1,0 +1,33 @@
+<html>
+<head>
+  <link href="node_modules/mocha/mocha.css" rel="stylesheet">
+</head>
+<body>
+
+<div id="mocha"></div>
+
+<script type="text/javascript" charset="utf-8">
+(function() {
+  var Mocha = require('mocha');
+  var fs = require('fs');
+  var path = require('path');
+
+  var filename = decodeURIComponent(window.location.pathname);
+  if (process.platform == 'win32') filename = filename.substr(1);
+  var dirname = path.dirname(filename);
+
+  var mocha = new Mocha();
+  mocha.ui('bdd').reporter('html');
+
+  // Read all test files.
+  var dirs = fs.readdirSync(path.join(dirname, 'tests'));
+  for (var i = 0; i < dirs.length; ++i) {
+    var test_file_path = path.join(dirname, 'tests', dirs[i], dirs[i] + '.js');
+    mocha.addFile(test_file_path);
+  }
+
+  mocha.run();
+})();
+</script>
+</body>
+</html>
