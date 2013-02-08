@@ -1,0 +1,56 @@
+#!/bin/bash
+
+MODE=${1:-'Release'}
+
+# Root of cefode
+ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/.."
+
+# Include utils
+source "$ROOT/script/bash_utils"
+
+has_command python || fail 'python is required to build cefode'
+has_command git || fail 'git is required to build cefode'
+
+if [ ! -e "$ROOT/depot_tools" ]; then
+  progress 'Getting depot_tools'
+  if git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git "$ROOT/depot_tools"
+  then success 'depot_tools downloaded'
+  else fail 'Cannot download depot_tools'
+  fi
+elif [ -d "$ROOT/depot_tools" ]; then
+  progress 'Updating depot_tools'
+  cd "$ROOT/depot_tools"
+  if bash update_depot_tools
+  then success 'depot_tools updated'
+  else fail 'Cannot update depot_tools'
+  fi
+  cd - > /dev/null
+else 
+  fail 'depot_tools must be a folder'
+fi
+
+if [ ! -e "$ROOT/src" ]; then
+  progress 'Getting chromium source code (could take hours)'
+  export GYP_GENERATORS=ninja
+  if python "$ROOT/depot_tools/gclient.py" sync
+  then success 'Source code downloaded'
+  else fail 'Cannot download source code'
+  fi
+
+  progress 'Compiling'
+  if bash "$ROOT/script/compile" $MODE
+  then success 'Successfully built cefode'
+  else fail 'Cannot build cefode'
+  fi
+elif [ -d "$ROOT/src" ]; then
+  ask 'Source code already downloaded, updating it will overwrite your local changes, do you want to continue? [y/N]'
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    bash "$ROOT/script/update" $MODE
+    exit
+  else
+    fail 'User cancelled'
+  fi
+else 
+  fail 'src must be a folder'
+fi
+

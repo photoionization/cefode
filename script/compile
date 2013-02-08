@@ -1,0 +1,21 @@
+#!/bin/bash
+
+MODE=${1:-'Release'}
+
+# Root of cefode
+ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/.."
+
+# Include utils
+source "$ROOT/script/bash_utils"
+
+if [ ! -d "$ROOT/src" ]; then
+  fail 'Cannot find source code'
+fi
+
+CORES=8
+if [[ $PLATFORM == 'linux-gnu' ]]; then
+  CORES=`grep "^core id" /proc/cpuinfo | wc -l`
+fi
+
+bash "$ROOT/depot_tools/ninja" -C "$ROOT/src/out/$MODE" -j$CORES cefclient
+

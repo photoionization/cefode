@@ -1,0 +1,54 @@
+#!/bin/bash
+
+progress () {
+  printf "  [ \033[00;34m..\033[0m ] $1\n"
+}
+
+info () {
+  printf "  [\033[0;33mINFO\033[0m] $1\n"
+}
+
+ask () {
+  printf "  [ \033[0;33m?\033[0m ] $1 "
+  read -n 1
+  echo
+}
+
+success () {
+  printf "\r\033[2K  [ \033[00;32mOK\033[0m ] $1\n"
+}
+
+fail () {
+  printf "\r\033[2K  [\033[0;31mFAIL\033[0m] $1\n"
+  exit 1
+}
+
+function has_command {
+  if command -v $1 >/dev/null 2>&1
+  then return 0
+  else return 1
+  fi 
+}
+
+function cross_install {
+  if has_command yum; then
+    INSTALL='sudo yum install'
+  elif has_command apt-get; then
+    INSTALL='sudo DEBIAN_FRONTEND=noninteractive apt-get -q -y install'
+  elif has_command brew; then
+    INSTALL='brew install'
+  else
+    echo 'Cannot find install tool for current platform'
+    return 1
+  fi
+  $INSTALL $1
+}
+
+PLATFORM=${OSTYPE//[0-9.]/} # remove trailing version like in darwin9.0
+
+case $PLATFORM in
+  linux-gnu) OS=$(head -n 1 /etc/issue | awk '{ print $1 }') ;;
+  darwin) OS=OSX ;;
+  *) OS=OTHER ;;
+esac
+

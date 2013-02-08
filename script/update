@@ -1,0 +1,28 @@
+#!/bin/bash
+
+MODE=${1:-'Release'}
+
+# Root of cefode
+ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/.."
+
+# Include utils
+source "$ROOT/script/bash_utils"
+
+if [ ! -d "$ROOT/src" ]; then
+  fail 'Cannot find source code'
+fi
+
+export GYP_GENERATORS=ninja
+
+progress 'Updating source code'
+if python "$ROOT/depot_tools/gclient.py" sync --force
+then success 'Source code updated'
+else fail 'Error when updating code'
+fi
+
+progress 'Compiling'
+if bash "$ROOT/script/compile" $MODE
+then success 'Successfully updated'
+else fail 'Cannot build cefode'
+fi
+
