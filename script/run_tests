@@ -1,0 +1,27 @@
+#!/bin/bash
+
+MODE=${1:-'Release'}
+
+# Root of cefode
+ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/.."
+
+# Include utils
+source "$ROOT/script/bash_utils"
+
+if [ ! -f "$ROOT/src/out/$MODE/cefclient" ]; then
+  fail 'cefode has not been built'
+fi
+
+if [ ! -d "$ROOT/test/node_modules" ]; then
+  has_command npm || fail 'npm is required'
+
+  progress 'Installing dependencies of test'
+  cd "$ROOT/test"
+  if npm install -d
+  then success 'Dependencies installed'
+  else fail 'Unable to install dependencies'
+  fi
+fi
+
+"$ROOT/src/out/$MODE/cefclient" --url="file://$ROOT/test/index.html" --remote-debugging-port=1127
+
