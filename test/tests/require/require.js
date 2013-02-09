@@ -30,11 +30,3 @@ describe('require', function() {
   });
 });
 
-describe('crashes', function() {
-  describe('context', function() {
-    it('process.nextTick', function(done) {
-      process.nextTick(done);
-    });
-  });
-});
-
