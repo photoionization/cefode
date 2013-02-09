@@ -19,6 +19,10 @@
   var mocha = new Mocha();
   mocha.ui('bdd').reporter('html');
 
+  var query = Mocha.utils.parseQuery(window.location.search || '');
+  if (query.grep) mocha.grep(query.grep);
+  if (query.invert) mocha.invert();
+
   // Read all test files.
   var dirs = fs.readdirSync(path.join(dirname, 'tests'));
   for (var i = 0; i < dirs.length; ++i) {
@@ -26,7 +30,9 @@
     mocha.addFile(test_file_path);
   }
 
-  mocha.run();
+  mocha.run(function() {
+    Mocha.utils.highlightTags('code');
+  });
 })();
 </script>
 </body>
