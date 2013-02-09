@@ -1,5 +1,7 @@
 # cefode — CEF + node
 
+Custom CEF build that has node.js API integration.
+
 ## How to build and update
 
 Build for the first time:
