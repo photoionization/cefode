@@ -16,12 +16,12 @@ if [ ! -d "$ROOT/test/node_modules" ]; then
   has_command npm || fail 'npm is required'
 
   progress 'Installing dependencies of test'
-  pushd "$ROOT/test"
+  pushd "$ROOT/test" > /dev/null
   if npm install -d
   then success 'Dependencies installed'
   else fail 'Unable to install dependencies'
   fi
-  popd
+  popd > /dev/null
 fi
 
 if [[ $PLATFORM == 'linux-gnu' ]]; then

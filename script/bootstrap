@@ -19,12 +19,12 @@ if [ ! -e "$ROOT/depot_tools" ]; then
   fi
 elif [ -d "$ROOT/depot_tools" ]; then
   progress 'Updating depot_tools'
-  pushd "$ROOT/depot_tools"
+  pushd "$ROOT/depot_tools" > /dev/null
   if bash update_depot_tools
   then success 'depot_tools updated'
   else fail 'Cannot update depot_tools'
   fi
-  popd
+  popd > /dev/null
 else 
   fail 'depot_tools must be a folder'
 fi
