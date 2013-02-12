@@ -19,19 +19,21 @@ if [ ! -e "$ROOT/depot_tools" ]; then
   fi
 elif [ -d "$ROOT/depot_tools" ]; then
   progress 'Updating depot_tools'
-  cd "$ROOT/depot_tools"
+  pushd "$ROOT/depot_tools"
   if bash update_depot_tools
   then success 'depot_tools updated'
   else fail 'Cannot update depot_tools'
   fi
-  cd - > /dev/null
+  popd
 else 
   fail 'depot_tools must be a folder'
 fi
 
 if [ ! -e "$ROOT/src" ]; then
+  [[ $PLATFORM == 'darwin' ]] || export GYP_GENERATORS=ninja 
+  export CEF_DIRECTORY="$ROOT/src/cef"
+
   progress 'Getting chromium source code (could take hours)'
-  export GYP_GENERATORS=ninja
   if python "$ROOT/depot_tools/gclient.py" sync
   then success 'Source code downloaded'
   else fail 'Cannot download source code'

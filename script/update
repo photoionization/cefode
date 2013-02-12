@@ -12,8 +12,6 @@ if [ ! -d "$ROOT/src" ]; then
   fail 'Cannot find source code'
 fi
 
-export GYP_GENERATORS=ninja
-
 progress 'Updating source code'
 cd "$ROOT/src"
 CURRENT_HEAD=`git log -1 | head -n 1 | awk '{ print $2 }'`
@@ -24,6 +22,9 @@ elif [[ $REMOTE_HEAD == $CURRENT_HEAD ]]; then
   success 'Already at the newest commit'
   exit
 fi
+
+[[ $PLATFORM == 'darwin' ]] || export GYP_GENERATORS=ninja 
+export CEF_DIRECTORY="$ROOT/src/cef"
 
 info 'Your local changes will be overwritten'
 if python "$ROOT/depot_tools/gclient.py" sync --force

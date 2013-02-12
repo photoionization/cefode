@@ -16,12 +16,24 @@ if [ ! -d "$ROOT/test/node_modules" ]; then
   has_command npm || fail 'npm is required'
 
   progress 'Installing dependencies of test'
-  cd "$ROOT/test"
+  pushd "$ROOT/test"
   if npm install -d
   then success 'Dependencies installed'
   else fail 'Unable to install dependencies'
   fi
+  popd
 fi
 
-"$ROOT/src/out/$MODE/cefclient" --url="file://$ROOT/test/index.html" --remote-debugging-port=1127
+if [[ $PLATFORM == 'linux-gnu' ]]; then
+  "$ROOT/src/out/$MODE/cefclient" --url="file://$ROOT/test/index.html"\
+                                  --remote-debugging-port=51127\
+                                  --allow-file-access-from-files
+elif [[ $PLATFORM == 'darwin' ]]; then
+  "$ROOT/src/xcodebuild/$MODE/cefclient.app/Contents/MacOS/cefclient"\
+                                  --url="file://$ROOT/test/index.html"\
+                                  --remote-debugging-port=51127\
+                                  --allow-file-access-from-files
+else
+  fail 'Other platform unsupported yet'
+fi
 
