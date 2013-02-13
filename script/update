@@ -8,7 +8,7 @@ fi
 MODE=${1:-'Release'}
 
 # Root of cefode
-ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/.."
+ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
 # Include utils
 source "$ROOT/script/bash_utils"
@@ -16,6 +16,30 @@ source "$ROOT/script/bash_utils"
 if [ ! -d "$ROOT/src" ]; then
   fail 'Cannot find source code'
 fi
+
+function is_git_clone_repo {
+  git config remote.origin.fetch > /dev/null
+}
+
+function update_git_repo {
+  if is_git_clone_repo; then
+    git fetch -q origin &> /dev/null
+    local REBASE_TXT STATUS
+    REBASE_TXT=$(git rebase -q origin/master 2>&1)
+    STATUS=$?
+    if [[ $STATUS -ne 0 ]]; then
+      echo "cefode scripts update failed. Conflict in $ROOT" >&2
+      echo "$REBASE_TXT" >&2
+      git rebase --abort 2> /dev/null
+    fi
+    return $STATUS
+  fi
+}
+
+# Silently update myself
+pushd $ROOT > /dev/null
+update_git_repo
+popd > /dev/null
 
 progress 'Updating source code'
 
