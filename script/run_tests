@@ -3,7 +3,7 @@
 MODE=${1:-'Release'}
 
 # Root of cefode
-ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/.."
+ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
 # Include utils
 source "$ROOT/script/bash_utils"
