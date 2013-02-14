@@ -59,6 +59,7 @@ fi
 export CEF_DIRECTORY="$ROOT/src/cef"
 
 info 'Your local changes will be overwritten'
+cd "$ROOT"
 if python "$ROOT/depot_tools/gclient.py" sync --force
 then success 'Source code updated'
 else fail 'Error when updating code'

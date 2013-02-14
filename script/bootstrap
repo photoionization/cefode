@@ -34,6 +34,7 @@ if [ ! -e "$ROOT/src" ]; then
   export CEF_DIRECTORY="$ROOT/src/cef"
 
   progress 'Getting chromium source code (could take hours)'
+  cd "$ROOT"
   if python "$ROOT/depot_tools/gclient.py" sync
   then success 'Source code downloaded'
   else fail 'Cannot download source code'
