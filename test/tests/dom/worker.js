@@ -1,3 +1,6 @@
 self.addEventListener('message', function(e) {
-  self.postMessage(e.data);
+  setTimeout(function() {
+    self.postMessage(e.data);
+    self.close();
+  }, 1000);
 }, false);
