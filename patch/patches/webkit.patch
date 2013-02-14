@@ -1,21 +1,159 @@
-Index: WebCore/WebCore.gyp/WebCore.gyp
+Index: Source/WebCore/WebCore.gyp/WebCore.gyp
 ===================================================================
---- WebCore/WebCore.gyp/WebCore.gyp	(revision 136040)
-+++ WebCore/WebCore.gyp/WebCore.gyp	(working copy)
+--- Source/WebCore/WebCore.gyp/WebCore.gyp	(revision 0)
++++ Source/WebCore/WebCore.gyp/WebCore.gyp	(working copy)
 @@ -2183,6 +2183,7 @@
          '../../WTF/WTF.gyp/WTF.gyp:wtf',
          '<(chromium_src_dir)/build/temp_gyp/googleurl.gyp:googleurl',
          '<(chromium_src_dir)/skia/skia.gyp:skia',
-+        '<(chromium_src_dir)/third_party/node/node.gyp:node',
++        '<(chromium_src_dir)/third_party/node/deps/uv/uv.gyp:uv',
          '<(chromium_src_dir)/third_party/npapi/npapi.gyp:npapi',
          '<(chromium_src_dir)/third_party/qcms/qcms.gyp:qcms',
          '<(chromium_src_dir)/v8/tools/gyp/v8.gyp:v8',
-@@ -2192,6 +2193,7 @@
-         '../../WTF/WTF.gyp/WTF.gyp:wtf',
-         '<(chromium_src_dir)/build/temp_gyp/googleurl.gyp:googleurl',
-         '<(chromium_src_dir)/skia/skia.gyp:skia',
-+        '<(chromium_src_dir)/third_party/node/node.gyp:node',
-         '<(chromium_src_dir)/third_party/npapi/npapi.gyp:npapi',
-         '<(chromium_src_dir)/third_party/qcms/qcms.gyp:qcms',
-         '<(chromium_src_dir)/v8/tools/gyp/v8.gyp:v8',
-
+Index: Source/WebCore/bindings/v8/WorkerScriptController.cpp
+===================================================================
+--- Source/WebCore/bindings/v8/WorkerScriptController.cpp	(revision 0)
++++ Source/WebCore/bindings/v8/WorkerScriptController.cpp	(working copy)
+@@ -114,6 +114,9 @@ bool WorkerScriptController::initializeContextIfNeeded()
+     if (m_context.isEmpty())
+         return false;
+ 
++    // Force to wrap whole runloop in context.
++    m_context.get()->Enter();
++
+     // Starting from now, use local context only.
+     v8::Local<v8::Context> context = v8::Local<v8::Context>::New(m_context.get());
+ 
+Index: Source/WebCore/workers/WorkerRunLoop.cpp
+===================================================================
+--- Source/WebCore/workers/WorkerRunLoop.cpp	(revision 0)
++++ Source/WebCore/workers/WorkerRunLoop.cpp	(working copy)
+@@ -88,10 +88,21 @@ private:
+     bool m_defaultMode;
+ };
+ 
++static void wakeup_callback(uv_async_t* handle, int status) {
++    // do nothing, just make libuv exit loop.
++}
++
++static void timer_callback(uv_timer_t* timer, int status) {
++    uv_async_t* handle = static_cast<uv_async_t*>(timer->data);
++    *static_cast<bool*>(handle->data) = true; // timer_called = true;
++    uv_async_send(handle);
++}
++
+ WorkerRunLoop::WorkerRunLoop()
+     : m_sharedTimer(adoptPtr(new WorkerSharedTimer))
+     , m_nestedCount(0)
+     , m_uniqueId(0)
++    , m_loop(NULL)
+ {
+ }
+ 
+@@ -128,12 +139,62 @@ private:
+ 
+ void WorkerRunLoop::run(WorkerContext* context)
+ {
++    // Init in new thread.
++    m_loop = uv_default_loop();
++    uv_async_init(m_loop, &m_wakeup_event, wakeup_callback);
++
++    // Timer to catch m_sharedTimer.
++    bool timer_called = false;
++    uv_timer_t timer;
++    timer.data = &m_wakeup_event;
++    m_wakeup_event.data = &timer_called;
++    uv_timer_init(m_loop, &timer);
++
++    // Make uv_run_once wake up when running for the first time.
++    uv_async_send(&m_wakeup_event);
++
+     RunLoopSetup setup(*this);
+     ModePredicate modePredicate(defaultMode());
+-    MessageQueueWaitResult result;
++    MessageQueueWaitResult result = MessageQueueTimeout;
+     do {
+-        result = runInMode(context, modePredicate, WaitForMessage);
++        if (m_sharedTimer->isActive()) {
++            double span = (m_sharedTimer->fireTime() - currentTime()) * 1000.;
++            // The timer in libuv tends to fire a bit earlier than the original
++            // pthread condition timer, which would cause many empty loop when
++            // nearing end, so making interval a bit longer seems to be a good
++            // idea, the 3ms is choosen via testing between many numbers.
++            span += 3.;
++            if (span <= 0.) {
++                if (!context->isClosing())
++                    m_sharedTimer->fire();
++            } else {
++                uv_timer_start(&timer, timer_callback, span, 0);
++            }
++        }
++
++        uv_run_once(m_loop);
++
++        if (uv_is_active(reinterpret_cast<uv_handle_t*>(&timer)))
++            uv_timer_stop(&timer);
++
++        if (timer_called) {
++            timer_called = false;
++            if (!context->isClosing())
++                m_sharedTimer->fire();
++        }
++
++        if (m_messageQueue.isEmpty())
++            continue;
++
++        result = runInMode(context, modePredicate, DontWaitForMessage);
+     } while (result != MessageQueueTerminated);
++
++    // Run until uv quits.
++    uv_unref(reinterpret_cast<uv_handle_t*>(&m_wakeup_event));
++    uv_run(m_loop);
++
++    // Cleanup.
++    uv_loop_delete(m_loop);
+     runCleanupTasks(context);
+ }
+ 
+@@ -168,8 +229,6 @@ MessageQueueWaitResult WorkerRunLoop::runInMode(WorkerContext* context, const Mo
+         break;
+ 
+     case MessageQueueTimeout:
+-        if (!context->isClosing())
+-            m_sharedTimer->fire();
+         break;
+     }
+ 
+@@ -203,6 +262,9 @@ void WorkerRunLoop::postTask(PassOwnPtr<ScriptExecutionContext::Task> task)
+ 
+ void WorkerRunLoop::postTaskForMode(PassOwnPtr<ScriptExecutionContext::Task> task, const String& mode)
+ {
++    if (m_loop)
++        uv_async_send(&m_wakeup_event);
++
+     m_messageQueue.append(Task::create(task, mode.isolatedCopy()));
+ }
+ 
+Index: Source/WebCore/workers/WorkerRunLoop.h
+===================================================================
+--- Source/WebCore/workers/WorkerRunLoop.h	(revision 0)
++++ Source/WebCore/workers/WorkerRunLoop.h	(working copy)
+@@ -38,6 +38,8 @@
+ #include <wtf/OwnPtr.h>
+ #include <wtf/PassOwnPtr.h>
+ 
++#include "../../../../node/deps/uv/include/uv.h"
++
+ namespace WebCore {
+ 
+     class ModePredicate;
+@@ -94,6 +96,9 @@ namespace WebCore {
+         OwnPtr<WorkerSharedTimer> m_sharedTimer;
+         int m_nestedCount;
+         unsigned long m_uniqueId;
++
++        uv_loop_t* m_loop;
++        uv_async_t m_wakeup_event;
+     };
+ 
+ } // namespace WebCore
