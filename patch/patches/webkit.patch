@@ -1,7 +1,7 @@
-Index: Source/WebCore/WebCore.gyp/WebCore.gyp
-===================================================================
---- Source/WebCore/WebCore.gyp/WebCore.gyp	(revision 0)
-+++ Source/WebCore/WebCore.gyp/WebCore.gyp	(working copy)
+diff --git Source/WebCore/WebCore.gyp/WebCore.gyp Source/WebCore/WebCore.gyp/WebCore.gyp
+index 0e6e203..e5c8a71 100644
+--- Source/WebCore/WebCore.gyp/WebCore.gyp
++++ Source/WebCore/WebCore.gyp/WebCore.gyp
 @@ -2064,6 +2064,7 @@
        'target_name': 'webcore_remaining',
        'type': 'static_library',
@@ -10,17 +10,12 @@ Index: Source/WebCore/WebCore.gyp/WebCore.gyp
          '<(chromium_src_dir)/third_party/v8-i18n/build/all.gyp:v8-i18n',
          'webcore_prerequisites',
        ],
-Index: Source/WebCore/bindings/v8/WorkerScriptController.cpp
-===================================================================
---- Source/WebCore/bindings/v8/WorkerScriptController.cpp	(revision 0)
-+++ Source/WebCore/bindings/v8/WorkerScriptController.cpp	(working copy)
-@@ -50,11 +50,27 @@
- 
- #if PLATFORM(CHROMIUM)
- #include <public/Platform.h>
-+#include <public/WebURL.h>
- #include <public/WebWorkerRunLoop.h>
-+#include <public/WebWorkerScriptObserver.h>
+diff --git Source/WebCore/bindings/v8/WorkerScriptController.cpp Source/WebCore/bindings/v8/WorkerScriptController.cpp
+index 7d6c25f..50c74fe 100644
+--- Source/WebCore/bindings/v8/WorkerScriptController.cpp
++++ Source/WebCore/bindings/v8/WorkerScriptController.cpp
+@@ -55,6 +55,10 @@
+ #include <public/WebWorkerScriptObserver.h>
  #endif
  
 +#include "node.h"
@@ -29,29 +24,8 @@ Index: Source/WebCore/bindings/v8/WorkerScriptController.cpp
 +
  namespace WebCore {
  
-+namespace {
-+
-+static Vector<WebKit::WebWorkerScriptObserver*>& observerVector()
-+{
-+    AtomicallyInitializedStatic(Vector<WebKit::WebWorkerScriptObserver*>&, observers = *new Vector<WebKit::WebWorkerScriptObserver*>);
-+    return observers;
-+}
-+
-+}  // namespace
-+
- WorkerScriptController::WorkerScriptController(WorkerContext* workerContext)
-     : m_workerContext(workerContext)
-     , m_isolate(v8::Isolate::New())
-@@ -72,6 +88,8 @@ WorkerScriptController::WorkerScriptController(WorkerContext* workerContext)
- WorkerScriptController::~WorkerScriptController()
- {
-     m_domDataStore.clear();
-+    if (!m_context.isEmpty())
-+        notifyWillReleaseWorkerScriptContext();
- #if PLATFORM(CHROMIUM)
-     // The corresponding call to didStartWorkerRunLoop is in
-     // WorkerThread::workerThread().
-@@ -82,6 +100,7 @@ WorkerScriptController::~WorkerScriptController()
+ namespace {
+@@ -96,6 +100,7 @@ WorkerScriptController::~WorkerScriptController()
      V8PerIsolateData::dispose(m_isolate);
      m_isolate->Exit();
      m_isolate->Dispose();
@@ -59,7 +33,7 @@ Index: Source/WebCore/bindings/v8/WorkerScriptController.cpp
  }
  
  void WorkerScriptController::disposeContext()
-@@ -100,6 +119,9 @@ bool WorkerScriptController::initializeContextIfNeeded()
+@@ -114,6 +119,9 @@ bool WorkerScriptController::initializeContextIfNeeded()
      if (m_context.isEmpty())
          return false;
  
@@ -69,7 +43,7 @@ Index: Source/WebCore/bindings/v8/WorkerScriptController.cpp
      // Starting from now, use local context only.
      v8::Local<v8::Context> context = v8::Local<v8::Context>::New(m_context.get());
  
-@@ -133,6 +155,34 @@ bool WorkerScriptController::initializeContextIfNeeded()
+@@ -147,6 +155,32 @@ bool WorkerScriptController::initializeContextIfNeeded()
      v8::Handle<v8::Object> globalObject = v8::Handle<v8::Object>::Cast(m_context->Global()->GetPrototype());
      globalObject->SetPrototype(jsWorkerContext);
  
@@ -99,88 +73,13 @@ Index: Source/WebCore/bindings/v8/WorkerScriptController.cpp
 +      fprintf(stderr, "%s\n", *trace);
 +    }
 +
-+    notifyDidCreateWorkerScriptContext();
-+
+     notifyDidCreateWorkerScriptContext();
+ 
      return true;
- }
- 
-@@ -256,6 +306,39 @@ WorkerScriptController* WorkerScriptController::controllerForContext()
-     return workerContext->script();
- }
- 
-+void WorkerScriptController::addObserver(WebKit::WebWorkerScriptObserver* observer)
-+{
-+    if (WebCore::WorkerThread::workerThreadCount() > 0)
-+      return;
-+
-+    observerVector().append(observer);
-+}
-+
-+void WorkerScriptController::removeObserver(WebKit::WebWorkerScriptObserver* observer)
-+{
-+    if (WebCore::WorkerThread::workerThreadCount() > 0)
-+      return;
-+
-+    Vector<WebKit::WebWorkerScriptObserver*>& observers = observerVector();
-+    size_t pos = observers.find(observer);
-+    if (pos != notFound)
-+        observers.remove(pos);
-+}
-+
-+void WorkerScriptController::notifyDidCreateWorkerScriptContext()
-+{
-+    const Vector<WebKit::WebWorkerScriptObserver*>& observers = observerVector();
-+    for (Vector<WebKit::WebWorkerScriptObserver*>::const_iterator i = observers.begin(); i != observers.end(); ++i)
-+        (*i)->didCreateWorkerScriptContext(WebKit::WebWorkerRunLoop(&m_workerContext->thread()->runLoop()), m_workerContext->url(), m_context.get());
-+}
-+
-+void WorkerScriptController::notifyWillReleaseWorkerScriptContext()
-+{
-+    const Vector<WebKit::WebWorkerScriptObserver*>& observers = observerVector();
-+    for (Vector<WebKit::WebWorkerScriptObserver*>::const_iterator i = observers.begin(); i != observers.end(); ++i)
-+        (*i)->willReleaseWorkerScriptContext(WebKit::WebWorkerRunLoop(&m_workerContext->thread()->runLoop()), m_workerContext->url(), m_context.get());
-+}
-+
- } // namespace WebCore
- 
- #endif // ENABLE(WORKERS)
-Index: Source/WebCore/bindings/v8/WorkerScriptController.h
-===================================================================
---- Source/WebCore/bindings/v8/WorkerScriptController.h	(revision 0)
-+++ Source/WebCore/bindings/v8/WorkerScriptController.h	(working copy)
-@@ -40,6 +40,10 @@
- #include <wtf/Threading.h>
- #include <wtf/text/TextPosition.h>
- 
-+namespace WebKit {
-+class WebWorkerScriptObserver;
-+}
-+
- namespace WebCore {
- 
-     class ScriptSourceCode;
-@@ -95,10 +99,17 @@ namespace WebCore {
-         // Returns a local handle of the context.
-         v8::Local<v8::Context> context() { return v8::Local<v8::Context>::New(m_context.get()); }
- 
-+        // Add or remove an observer. Can only be called while no WebWorkers exist.
-+        static void addObserver(WebKit::WebWorkerScriptObserver*);
-+        static void removeObserver(WebKit::WebWorkerScriptObserver*);
-+
-     private:
-         bool initializeContextIfNeeded();
-         void disposeContext();
- 
-+        void notifyDidCreateWorkerScriptContext();
-+        void notifyWillReleaseWorkerScriptContext();
-+
-         WorkerContext* m_workerContext;
-         v8::Isolate* m_isolate;
-         ScopedPersistent<v8::Context> m_context;
-Index: Source/WebCore/workers/WorkerRunLoop.cpp
-===================================================================
---- Source/WebCore/workers/WorkerRunLoop.cpp	(revision 0)
-+++ Source/WebCore/workers/WorkerRunLoop.cpp	(working copy)
+diff --git Source/WebCore/workers/WorkerRunLoop.cpp Source/WebCore/workers/WorkerRunLoop.cpp
+index eb665d2..dd8ae78 100644
+--- Source/WebCore/workers/WorkerRunLoop.cpp
++++ Source/WebCore/workers/WorkerRunLoop.cpp
 @@ -88,10 +88,21 @@ private:
      bool m_defaultMode;
  };
@@ -287,10 +186,10 @@ Index: Source/WebCore/workers/WorkerRunLoop.cpp
      m_messageQueue.append(Task::create(task, mode.isolatedCopy()));
  }
  
-Index: Source/WebCore/workers/WorkerRunLoop.h
-===================================================================
---- Source/WebCore/workers/WorkerRunLoop.h	(revision 0)
-+++ Source/WebCore/workers/WorkerRunLoop.h	(working copy)
+diff --git Source/WebCore/workers/WorkerRunLoop.h Source/WebCore/workers/WorkerRunLoop.h
+index 3916d6a..8c8e922 100644
+--- Source/WebCore/workers/WorkerRunLoop.h
++++ Source/WebCore/workers/WorkerRunLoop.h
 @@ -38,6 +38,8 @@
  #include <wtf/OwnPtr.h>
  #include <wtf/PassOwnPtr.h>
@@ -310,50 +209,3 @@ Index: Source/WebCore/workers/WorkerRunLoop.h
      };
  
  } // namespace WebCore
-Index: Source/WebKit/chromium/public/WebWorkerInfo.h
-===================================================================
---- Source/WebKit/chromium/public/WebWorkerInfo.h	(revision 0)
-+++ Source/WebKit/chromium/public/WebWorkerInfo.h	(working copy)
-@@ -35,9 +35,15 @@
- 
- namespace WebKit {
- 
-+class WebWorkerScriptObserver;
-+
- class WebWorkerInfo {
- public:
-     WEBKIT_EXPORT static unsigned dedicatedWorkerCount();
-+
-+    // Add or remove an observer. Can only be called while no WebWorkers exist.
-+    WEBKIT_EXPORT static void addScriptObserver(WebWorkerScriptObserver*);
-+    WEBKIT_EXPORT static void removeScriptObserver(WebWorkerScriptObserver*);
- };
- 
- }
-Index: Source/WebKit/chromium/src/WebWorkerInfo.cpp
-===================================================================
---- Source/WebKit/chromium/src/WebWorkerInfo.cpp	(revision 0)
-+++ Source/WebKit/chromium/src/WebWorkerInfo.cpp	(working copy)
-@@ -31,6 +31,7 @@
- #include "config.h"
- #include "WebWorkerInfo.h"
- 
-+#include "WorkerScriptController.h"
- #include "WorkerThread.h"
- 
- namespace WebKit {
-@@ -40,4 +41,14 @@ unsigned WebWorkerInfo::dedicatedWorkerCount()
-     return WebCore::WorkerThread::workerThreadCount();
- }
- 
-+void WebWorkerInfo::addScriptObserver(WebWorkerScriptObserver* observer)
-+{
-+    WebCore::WorkerScriptController::addObserver(observer);
-+}
-+
-+void WebWorkerInfo::removeScriptObserver(WebWorkerScriptObserver* observer)
-+{
-+    WebCore::WorkerScriptController::removeObserver(observer);
-+}
-+
- }
