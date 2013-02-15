@@ -1,6 +1,18 @@
 var assert = require('assert');
 
 describe('node', function() {
+  describe('web workers', function() {
+    it('process object', function(done) {
+      var worker = new Worker('tests/node/worker1.js');
+      worker.addEventListener('message', function(e) {
+        assert.equal(e.data, 'Hello World!' + process.cwd() + process.title);
+        done();
+      }, false);
+
+      worker.postMessage('Hello World!');
+    });
+  });
+
   describe('child_process', function() {
     var exec = require('child_process').exec;
 
