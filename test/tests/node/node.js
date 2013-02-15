@@ -5,7 +5,8 @@ describe('node', function() {
     it('process object', function(done) {
       var worker = new Worker('tests/node/worker1.js');
       worker.addEventListener('message', function(e) {
-        assert.equal(e.data, 'Hello World!' + process.cwd() + process.title);
+        var script_path = require('path').join(__dirname, 'worker1.js');
+        assert.equal(e.data, 'Hello World!' + process.cwd() + process.title + script_path);
         worker.terminate();
         done();
       }, false);

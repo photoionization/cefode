@@ -69,7 +69,7 @@ Index: Source/WebCore/bindings/v8/WorkerScriptController.cpp
      // Starting from now, use local context only.
      v8::Local<v8::Context> context = v8::Local<v8::Context>::New(m_context.get());
  
-@@ -133,6 +155,33 @@ bool WorkerScriptController::initializeContextIfNeeded()
+@@ -133,6 +155,34 @@ bool WorkerScriptController::initializeContextIfNeeded()
      v8::Handle<v8::Object> globalObject = v8::Handle<v8::Object>::Cast(m_context->Global()->GetPrototype());
      globalObject->SetPrototype(jsWorkerContext);
  
@@ -79,7 +79,7 @@ Index: Source/WebCore/bindings/v8/WorkerScriptController.cpp
 +    v8::Local<v8::FunctionTemplate> process_template = v8::FunctionTemplate::New();
 +    process_template->SetClassName(v8::String::NewSymbol("process"));
 +    v8::Local<v8::Object> process = process_template->GetFunction()->NewInstance();
-+    node::SetupProcessObject(process, argc, argv);
++    node::SetupProcessObject(process, argc, argv, true);
 +
 +    // The initialize script
 +    v8::TryCatch try_catch;
@@ -88,11 +88,12 @@ Index: Source/WebCore/bindings/v8/WorkerScriptController.cpp
 +        node::CefodeMainSource(), v8::String::New("cefode.js"));
 +    v8::Local<v8::Value> result = script->Run();
 +
-+    v8::Handle<v8::Value> args[2] = {
++    v8::Handle<v8::Value> args[3] = {
 +        v8::Local<v8::Value>::New(process),
++        v8String(m_workerContext->url().path()),
 +        v8::Boolean::New(true)
 +    };
-+    v8::Local<v8::Function>::Cast(result)->Call(context->Global(), 2, args);
++    v8::Local<v8::Function>::Cast(result)->Call(context->Global(), 3, args);
 +    if (try_catch.HasCaught()) {
 +      v8::String::Utf8Value trace(try_catch.StackTrace());
 +      fprintf(stderr, "%s\n", *trace);
@@ -103,7 +104,7 @@ Index: Source/WebCore/bindings/v8/WorkerScriptController.cpp
      return true;
  }
  
-@@ -256,6 +305,39 @@ WorkerScriptController* WorkerScriptController::controllerForContext()
+@@ -256,6 +306,39 @@ WorkerScriptController* WorkerScriptController::controllerForContext()
      return workerContext->script();
  }
  
