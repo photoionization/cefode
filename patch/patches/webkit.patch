@@ -1,7 +1,7 @@
-diff --git Source/WebCore/WebCore.gyp/WebCore.gyp Source/WebCore/WebCore.gyp/WebCore.gyp
-index 0e6e203..e5c8a71 100644
---- Source/WebCore/WebCore.gyp/WebCore.gyp
-+++ Source/WebCore/WebCore.gyp/WebCore.gyp
+Index: Source/WebCore/WebCore.gyp/WebCore.gyp
+===================================================================
+--- Source/WebCore/WebCore.gyp/WebCore.gyp	(revision 0)
++++ Source/WebCore/WebCore.gyp/WebCore.gyp	(working copy)
 @@ -2064,6 +2064,7 @@
        'target_name': 'webcore_remaining',
        'type': 'static_library',
@@ -10,10 +10,10 @@ index 0e6e203..e5c8a71 100644
          '<(chromium_src_dir)/third_party/v8-i18n/build/all.gyp:v8-i18n',
          'webcore_prerequisites',
        ],
-diff --git Source/WebCore/bindings/v8/WorkerScriptController.cpp Source/WebCore/bindings/v8/WorkerScriptController.cpp
-index 7d6c25f..50c74fe 100644
---- Source/WebCore/bindings/v8/WorkerScriptController.cpp
-+++ Source/WebCore/bindings/v8/WorkerScriptController.cpp
+Index: Source/WebCore/bindings/v8/WorkerScriptController.cpp
+===================================================================
+--- Source/WebCore/bindings/v8/WorkerScriptController.cpp	(revision 0)
++++ Source/WebCore/bindings/v8/WorkerScriptController.cpp	(working copy)
 @@ -55,6 +55,10 @@
  #include <public/WebWorkerScriptObserver.h>
  #endif
@@ -76,10 +76,10 @@ index 7d6c25f..50c74fe 100644
      notifyDidCreateWorkerScriptContext();
  
      return true;
-diff --git Source/WebCore/workers/WorkerRunLoop.cpp Source/WebCore/workers/WorkerRunLoop.cpp
-index eb665d2..dd8ae78 100644
---- Source/WebCore/workers/WorkerRunLoop.cpp
-+++ Source/WebCore/workers/WorkerRunLoop.cpp
+Index: Source/WebCore/workers/WorkerRunLoop.cpp
+===================================================================
+--- Source/WebCore/workers/WorkerRunLoop.cpp	(revision 0)
++++ Source/WebCore/workers/WorkerRunLoop.cpp	(working copy)
 @@ -88,10 +88,21 @@ private:
      bool m_defaultMode;
  };
@@ -186,10 +186,10 @@ index eb665d2..dd8ae78 100644
      m_messageQueue.append(Task::create(task, mode.isolatedCopy()));
  }
  
-diff --git Source/WebCore/workers/WorkerRunLoop.h Source/WebCore/workers/WorkerRunLoop.h
-index 3916d6a..8c8e922 100644
---- Source/WebCore/workers/WorkerRunLoop.h
-+++ Source/WebCore/workers/WorkerRunLoop.h
+Index: Source/WebCore/workers/WorkerRunLoop.h
+===================================================================
+--- Source/WebCore/workers/WorkerRunLoop.h	(revision 0)
++++ Source/WebCore/workers/WorkerRunLoop.h	(working copy)
 @@ -38,6 +38,8 @@
  #include <wtf/OwnPtr.h>
  #include <wtf/PassOwnPtr.h>
