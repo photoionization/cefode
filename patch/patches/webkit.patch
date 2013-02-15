@@ -14,7 +14,7 @@ Index: Source/WebCore/bindings/v8/WorkerScriptController.cpp
 ===================================================================
 --- Source/WebCore/bindings/v8/WorkerScriptController.cpp	(revision 0)
 +++ Source/WebCore/bindings/v8/WorkerScriptController.cpp	(working copy)
-@@ -50,11 +50,26 @@
+@@ -50,11 +50,27 @@
  
  #if PLATFORM(CHROMIUM)
  #include <public/Platform.h>
@@ -24,6 +24,7 @@ Index: Source/WebCore/bindings/v8/WorkerScriptController.cpp
  #endif
  
 +#include "node.h"
++#include "node_vars.h"
 +#include "node_javascript.h"
 +
  namespace WebCore {
@@ -41,7 +42,7 @@ Index: Source/WebCore/bindings/v8/WorkerScriptController.cpp
  WorkerScriptController::WorkerScriptController(WorkerContext* workerContext)
      : m_workerContext(workerContext)
      , m_isolate(v8::Isolate::New())
-@@ -72,6 +87,8 @@ WorkerScriptController::WorkerScriptController(WorkerContext* workerContext)
+@@ -72,6 +88,8 @@ WorkerScriptController::WorkerScriptController(WorkerContext* workerContext)
  WorkerScriptController::~WorkerScriptController()
  {
      m_domDataStore.clear();
@@ -50,7 +51,15 @@ Index: Source/WebCore/bindings/v8/WorkerScriptController.cpp
  #if PLATFORM(CHROMIUM)
      // The corresponding call to didStartWorkerRunLoop is in
      // WorkerThread::workerThread().
-@@ -100,6 +117,9 @@ bool WorkerScriptController::initializeContextIfNeeded()
+@@ -82,6 +100,7 @@ WorkerScriptController::~WorkerScriptController()
+     V8PerIsolateData::dispose(m_isolate);
+     m_isolate->Exit();
+     m_isolate->Dispose();
++    node::globals_free();
+ }
+ 
+ void WorkerScriptController::disposeContext()
+@@ -100,6 +119,9 @@ bool WorkerScriptController::initializeContextIfNeeded()
      if (m_context.isEmpty())
          return false;
  
@@ -60,7 +69,7 @@ Index: Source/WebCore/bindings/v8/WorkerScriptController.cpp
      // Starting from now, use local context only.
      v8::Local<v8::Context> context = v8::Local<v8::Context>::New(m_context.get());
  
-@@ -133,6 +153,33 @@ bool WorkerScriptController::initializeContextIfNeeded()
+@@ -133,6 +155,33 @@ bool WorkerScriptController::initializeContextIfNeeded()
      v8::Handle<v8::Object> globalObject = v8::Handle<v8::Object>::Cast(m_context->Global()->GetPrototype());
      globalObject->SetPrototype(jsWorkerContext);
  
@@ -94,7 +103,7 @@ Index: Source/WebCore/bindings/v8/WorkerScriptController.cpp
      return true;
  }
  
-@@ -256,6 +303,39 @@ WorkerScriptController* WorkerScriptController::controllerForContext()
+@@ -256,6 +305,39 @@ WorkerScriptController* WorkerScriptController::controllerForContext()
      return workerContext->script();
  }
  
