@@ -1,5 +1,11 @@
 #!/bin/bash
 
+PAGE_URL="file://$ROOT/test/index.html"
+if [[ $1 == --url=* ]]; then
+  PAGE_URL=${1:6}
+  shift
+fi
+
 MODE=${1:-'Release'}
 
 # Root of cefode
@@ -25,12 +31,12 @@ if [ ! -d "$ROOT/test/node_modules" ]; then
 fi
 
 if [[ $PLATFORM == 'linux-gnu' ]]; then
-  "$ROOT/src/out/$MODE/cefclient" --url="file://$ROOT/test/index.html"\
+  "$ROOT/src/out/$MODE/cefclient" --url=$PAGE_URL\
                                   --remote-debugging-port=51127\
                                   --allow-file-access-from-files
 elif [[ $PLATFORM == 'darwin' ]]; then
   "$ROOT/src/xcodebuild/$MODE/cefclient.app/Contents/MacOS/cefclient"\
-                                  --url="file://$ROOT/test/index.html"\
+                                  --url=$PAGE_URL\
                                   --remote-debugging-port=51127\
                                   --allow-file-access-from-files
 else
