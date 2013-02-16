@@ -14,7 +14,6 @@ describe('node', function() {
       worker.postMessage('Hello World!');
     });
 
-
     it('process binding', function(done) {
       process.binding('constants');
       process.binding('io_watcher');
@@ -22,12 +21,21 @@ describe('node', function() {
 
       var worker = new Worker('tests/node/worker2.js');
       worker.addEventListener('message', function(e) {
-        assert.equal(e.data, 'Hello World!');
-        worker.terminate();
+        assert.equal(e.data, 'Hello World!' + new Buffer('hello'));
         done();
       }, false);
 
       worker.postMessage('Hello World!');
+    });
+
+    it('built-in modules', function(done) {
+      var worker = new Worker('tests/node/worker3.js');
+      worker.addEventListener('message', function(e) {
+        var content = require('fs').readFileSync(__filename, 'utf8');
+        assert.equal(e.data, content);
+        done();
+      }, false);
+      worker.postMessage(__filename);
     });
   });
 
