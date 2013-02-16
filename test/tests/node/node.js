@@ -1,7 +1,7 @@
 var assert = require('assert');
 
 describe('node', function() {
-  describe('web workers', function() {
+  describe('dedicated workers', function() {
     it('process object', function(done) {
       var worker = new Worker('tests/node/worker1.js');
       worker.addEventListener('message', function(e) {
@@ -36,6 +36,42 @@ describe('node', function() {
         done();
       }, false);
       worker.postMessage(__filename);
+    });
+  });
+
+  describe('shared workers', function() {
+    it('process object', function(done) {
+      var worker = new SharedWorker('tests/node/shared_worker1.js');
+      worker.port.addEventListener('message', function(e) {
+        var script_path = require('path').join(__dirname, 'shared_worker1.js');
+        assert.equal(e.data, process.cwd() + script_path);
+        done();
+      }, false);
+      worker.port.start();
+    });
+
+    it('process binding', function(done) {
+      process.binding('constants');
+      process.binding('io_watcher');
+      process.binding('natives');
+
+      var worker = new SharedWorker('tests/node/shared_worker2.js');
+      worker.port.addEventListener('message', function(e) {
+        assert.equal(e.data, String(new Buffer('hello')));
+        done();
+      }, false);
+      worker.port.start();
+    });
+
+    it('built-in modules', function(done) {
+      var worker = new SharedWorker('tests/node/shared_worker3.js');
+      worker.port.addEventListener('message', function(e) {
+        var content = require('fs').readFileSync(__filename, 'utf8');
+        assert.equal(e.data, content);
+        done();
+      }, false);
+      worker.port.start();
+      worker.port.postMessage(__filename);
     });
   });
 
