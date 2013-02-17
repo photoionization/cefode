@@ -3,7 +3,7 @@ var assert = require('assert');
 describe('node', function() {
   describe('dedicated workers', function() {
     it('process object', function(done) {
-      var worker = new Worker('tests/node/worker1.js');
+      var worker = new Worker('spec/node/worker1.js');
       worker.addEventListener('message', function(e) {
         var script_path = require('path').join(__dirname, 'worker1.js');
         assert.equal(e.data, 'Hello World!' + process.cwd() + process.title + script_path);
@@ -19,7 +19,7 @@ describe('node', function() {
       process.binding('io_watcher');
       process.binding('natives');
 
-      var worker = new Worker('tests/node/worker2.js');
+      var worker = new Worker('spec/node/worker2.js');
       worker.addEventListener('message', function(e) {
         assert.equal(e.data, 'Hello World!' + new Buffer('hello'));
         done();
@@ -29,7 +29,7 @@ describe('node', function() {
     });
 
     it('built-in modules', function(done) {
-      var worker = new Worker('tests/node/worker3.js');
+      var worker = new Worker('spec/node/worker3.js');
       worker.addEventListener('message', function(e) {
         var content = require('fs').readFileSync(__filename, 'utf8');
         assert.equal(e.data, content);
@@ -41,7 +41,7 @@ describe('node', function() {
 
   describe('shared workers', function() {
     it('process object', function(done) {
-      var worker = new SharedWorker('tests/node/shared_worker1.js');
+      var worker = new SharedWorker('spec/node/shared_worker1.js');
       worker.port.addEventListener('message', function(e) {
         var script_path = require('path').join(__dirname, 'shared_worker1.js');
         assert.equal(e.data, process.cwd() + script_path);
@@ -55,7 +55,7 @@ describe('node', function() {
       process.binding('io_watcher');
       process.binding('natives');
 
-      var worker = new SharedWorker('tests/node/shared_worker2.js');
+      var worker = new SharedWorker('spec/node/shared_worker2.js');
       worker.port.addEventListener('message', function(e) {
         assert.equal(e.data, String(new Buffer('hello')));
         done();
@@ -64,7 +64,7 @@ describe('node', function() {
     });
 
     it('built-in modules', function(done) {
-      var worker = new SharedWorker('tests/node/shared_worker3.js');
+      var worker = new SharedWorker('spec/node/shared_worker3.js');
       worker.port.addEventListener('message', function(e) {
         var content = require('fs').readFileSync(__filename, 'utf8');
         assert.equal(e.data, content);

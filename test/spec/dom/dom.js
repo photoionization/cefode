@@ -11,7 +11,7 @@ describe('dom', function() {
     });
 
     it('dedicated worker', function(done) {
-      var worker = new Worker('tests/dom/worker.js');
+      var worker = new Worker('spec/dom/worker.js');
       worker.addEventListener('message', function(e) {
         assert.equal(e.data, 'Hello World!');
         worker.terminate();
@@ -22,7 +22,7 @@ describe('dom', function() {
     });
 
     it('shared worker', function(done) {
-      var worker = new SharedWorker('tests/dom/shared_worker.js');
+      var worker = new SharedWorker('spec/dom/shared_worker.js');
       worker.port.addEventListener('message', function(e) {
         assert.equal(e.data, 'Hello World!');
         worker.port.close();

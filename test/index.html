@@ -24,9 +24,9 @@
   if (query.invert) mocha.invert();
 
   // Read all test files.
-  var dirs = fs.readdirSync(path.join(dirname, 'tests'));
+  var dirs = fs.readdirSync(path.join(dirname, 'spec'));
   for (var i = 0; i < dirs.length; ++i) {
-    var test_file_path = path.join(dirname, 'tests', dirs[i], dirs[i] + '.js');
+    var test_file_path = path.join(dirname, 'spec', dirs[i], dirs[i] + '.js');
     mocha.addFile(test_file_path);
   }
 
