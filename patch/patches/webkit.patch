@@ -10,6 +10,41 @@ Index: Source/WebCore/WebCore.gyp/WebCore.gyp
          '<(chromium_src_dir)/third_party/v8-i18n/build/all.gyp:v8-i18n',
          'webcore_prerequisites',
        ],
+Index: Source/WebCore/bindings/v8/ScriptController.cpp
+===================================================================
+--- Source/WebCore/bindings/v8/ScriptController.cpp	(revision 0)
++++ Source/WebCore/bindings/v8/ScriptController.cpp	(working copy)
+@@ -77,6 +77,10 @@
+ #include "TraceEvent.h"
+ #endif
+ 
++namespace node {
++extern v8::Persistent<v8::Context> g_context;
++}
++
+ namespace WebCore {
+ 
+ void ScriptController::initializeThreading()
+@@ -417,6 +421,9 @@ void ScriptController::evaluateInIsolatedWorld(int worldID, const Vector<ScriptS
+ 
+ bool ScriptController::shouldBypassMainWorldContentSecurityPolicy()
+ {
++    if (v8::Context::GetEntered() == node::g_context)
++        return true;
++
+     if (DOMWrapperWorld* world = worldForEnteredContextIfIsolated())
+         return world->isolatedWorldHasContentSecurityPolicy();
+     return false;
+@@ -445,6 +452,9 @@ v8::Local<v8::Context> ScriptController::currentWorldContext()
+         return contextForWorld(this, mainThreadNormalWorld());
+ 
+     v8::Handle<v8::Context> context = v8::Context::GetEntered();
++    if (v8::Context::GetEntered() == node::g_context)
++        return contextForWorld(this, mainThreadNormalWorld());
++
+     DOMWrapperWorld* isolatedWorld = DOMWrapperWorld::isolated(context);
+     if (!isolatedWorld)
+         return contextForWorld(this, mainThreadNormalWorld());
 Index: Source/WebCore/bindings/v8/WorkerScriptController.cpp
 ===================================================================
 --- Source/WebCore/bindings/v8/WorkerScriptController.cpp	(revision 0)
