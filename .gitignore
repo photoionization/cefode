@@ -2,3 +2,4 @@
 src/
 depot_tools/
 test/node_modules/
+patch/patch_state.h
