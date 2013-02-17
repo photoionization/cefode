@@ -137,7 +137,7 @@ Index: Source/WebCore/workers/WorkerRunLoop.cpp
  {
  }
  
-@@ -128,12 +139,62 @@ private:
+@@ -128,12 +139,59 @@ private:
  
  void WorkerRunLoop::run(WorkerContext* context)
  {
@@ -187,9 +187,6 @@ Index: Source/WebCore/workers/WorkerRunLoop.cpp
 +                m_sharedTimer->fire();
 +        }
 +
-+        if (m_messageQueue.isEmpty())
-+            continue;
-+
 +        result = runInMode(context, modePredicate, DontWaitForMessage);
      } while (result != MessageQueueTerminated);
 +
@@ -202,7 +199,7 @@ Index: Source/WebCore/workers/WorkerRunLoop.cpp
      runCleanupTasks(context);
  }
  
-@@ -168,8 +229,6 @@ MessageQueueWaitResult WorkerRunLoop::runInMode(WorkerContext* context, const Mo
+@@ -168,8 +226,6 @@ MessageQueueWaitResult WorkerRunLoop::runInMode(WorkerContext* context, const Mo
          break;
  
      case MessageQueueTimeout:
@@ -211,7 +208,7 @@ Index: Source/WebCore/workers/WorkerRunLoop.cpp
          break;
      }
  
-@@ -203,6 +262,9 @@ void WorkerRunLoop::postTask(PassOwnPtr<ScriptExecutionContext::Task> task)
+@@ -203,6 +259,9 @@ void WorkerRunLoop::postTask(PassOwnPtr<ScriptExecutionContext::Task> task)
  
  void WorkerRunLoop::postTaskForMode(PassOwnPtr<ScriptExecutionContext::Task> task, const String& mode)
  {
