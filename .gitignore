@@ -1,4 +1,5 @@
 .gclient_entries
+console.log
 src/
 depot_tools/
 test/node_modules/
