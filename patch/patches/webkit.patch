@@ -78,7 +78,7 @@ Index: Source/WebCore/bindings/v8/WorkerScriptController.cpp
      // Starting from now, use local context only.
      v8::Local<v8::Context> context = v8::Local<v8::Context>::New(m_context.get());
  
-@@ -147,6 +155,32 @@ bool WorkerScriptController::initializeContextIfNeeded()
+@@ -147,6 +155,31 @@ bool WorkerScriptController::initializeContextIfNeeded()
      v8::Handle<v8::Object> globalObject = v8::Handle<v8::Object>::Cast(m_context->Global()->GetPrototype());
      globalObject->SetPrototype(jsWorkerContext);
  
@@ -94,15 +94,14 @@ Index: Source/WebCore/bindings/v8/WorkerScriptController.cpp
 +    v8::TryCatch try_catch;
 +
 +    v8::Local<v8::Script> script = v8::Script::Compile(
-+        node::CefodeMainSource(), v8::String::New("cefode.js"));
++        node::CefodeWorkerMainSource(), v8::String::New("cefode_worker.js"));
 +    v8::Local<v8::Value> result = script->Run();
 +
-+    v8::Handle<v8::Value> args[3] = {
++    v8::Handle<v8::Value> args[2] = {
 +        v8::Local<v8::Value>::New(process),
-+        v8String(m_workerContext->url().path()),
-+        v8::Boolean::New(true)
++        v8String(m_workerContext->url().path())
 +    };
-+    v8::Local<v8::Function>::Cast(result)->Call(context->Global(), 3, args);
++    v8::Local<v8::Function>::Cast(result)->Call(context->Global(), 2, args);
 +    if (try_catch.HasCaught()) {
 +      v8::String::Utf8Value trace(try_catch.StackTrace());
 +      fprintf(stderr, "%s\n", *trace);
