@@ -3,11 +3,13 @@ var assert = require('assert');
 describe('dom', function() {
   describe('features', function() {
     it('message channel', function(done) {
-      var mc = new window.MessageChannel()
-      mc.port1.onmessage = function(m) {
-        done();
-      }
-      mc.port2.postMessage("HELLO");
+      require('fs').readFile(__filename, function() {
+        var mc = new window.MessageChannel()
+        mc.port1.onmessage = function(m) {
+          done();
+        }
+        mc.port2.postMessage("HELLO");
+      });
     });
 
     it('dedicated worker', function(done) {
