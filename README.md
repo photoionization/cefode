@@ -35,7 +35,10 @@ $ ./script/run_tests
 * Support third party JavaScript module.
 * Has node-sqlite3 as built-in module.
 
-## TODO
+## Unsupported Features
 
 * Native node modules.
 
+## Documents
+
+* [User Guide](https://github.com/zcbenz/cefode/wiki/User-Guide)
