@@ -1,0 +1,53 @@
+#!/bin/bash
+
+# Root of cefode
+ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
+
+# Parse version string
+function parse_node_version {
+  local NODE_VERSION_H
+  NODE_VERSION_H="$ROOT/src/third_party/node/src/node_version.h"
+  local MAJOR MINOR PATCH
+  MAJOR=`grep NODE_MAJOR_VERSION "$NODE_VERSION_H" | head -n 1`
+  MAJOR=${MAJOR:27}
+  MINOR=`grep NODE_MINOR_VERSION "$NODE_VERSION_H" | head -n 1`
+  MINOR=${MINOR:27}
+  PATCH=`grep NODE_PATCH_VERSION "$NODE_VERSION_H" | head -n 1`
+  PATCH=${PATCH:27}
+  NODE_VERSION="$MAJOR.$MINOR.$PATCH"
+}
+
+parse_node_version
+
+TEMP_STORE=`mktemp -d /tmp/cefode_headers_XXXXXX`
+TARGET_FOLDER="$TEMP_STORE/node-v$NODE_VERSION"
+
+# Copy minimum files
+rsync -a --include 'src/' \
+         --include 'deps/' \
+         --include 'deps/http_parser/' \
+         --include 'deps/zlib/' \
+         --include 'deps/zlib/contrib/' \
+         --include 'deps/zlib/contrib/minizip/' \
+         --include 'tools/' \
+         --include '*.h' --include '*.gypi' \
+         --exclude '*' "$ROOT/src/third_party/node/" "$TARGET_FOLDER"
+rsync -a --include 'src/' \
+         --include 'include/' \
+         --include 'tools/' \
+         --include '*.h' --include '*.gypi' \
+         --exclude '*' "$ROOT/src/v8/" "$TARGET_FOLDER/deps/v8/"
+find "$TARGET_FOLDER" -depth -empty -delete
+rm "$TARGET_FOLDER/config.gypi"
+
+# Make a fake node tarball
+cd "$TEMP_STORE"
+tar zcf "$TEMP_STORE/node-v$NODE_VERSION.tar.gz" "node-v$NODE_VERSION"
+
+# TODO
+# Upload it to S3
+
+ls $TEMP_STORE
+
+# TODO
+# Clean after upload
