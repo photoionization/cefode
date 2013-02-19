@@ -30,14 +30,11 @@ $ ./script/run_tests
 
 ## Features
 
-* Support node API (require, process, built-in modules, etc.) in normal web page.
-* Support node API in web workers (eg. multi-threaded node.js).
+* Node API (require, process, built-in modules, etc.) in normal web page.
+* Node API in web workers (eg. multi-threaded node.js).
 * Support third party JavaScript module.
+* Support native node modules (instructions for building is on the way).
 * Has node-sqlite3 as built-in module.
-
-## Unsupported Features
-
-* Native node modules.
 
 ## Documents
 
