@@ -3,6 +3,12 @@
 # Root of cefode
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
+# Include utils
+source "$ROOT/script/bash_utils"
+
+BUCKET=$1
+[ -z $BUCKET ] && fail 'Must provide bucket name'
+
 # Parse version string
 function parse_node_version {
   local NODE_VERSION_H
@@ -14,18 +20,21 @@ function parse_node_version {
   MINOR=${MINOR:27}
   PATCH=`grep NODE_PATCH_VERSION "$NODE_VERSION_H" | head -n 1`
   PATCH=${PATCH:27}
-  NODE_VERSION="$MAJOR.$MINOR.$PATCH"
+  NODE_VERSION="v$MAJOR.$MINOR.$PATCH"
 }
 
 parse_node_version
 
 TEMP_STORE=`mktemp -d /tmp/cefode_headers_XXXXXX`
-TARGET_FOLDER="$TEMP_STORE/node-v$NODE_VERSION"
+TARGET_FOLDER="$TEMP_STORE/node-$NODE_VERSION"
 
 # Copy minimum files
 rsync -a --include 'src/' \
          --include 'deps/' \
          --include 'deps/http_parser/' \
+         --include 'deps/uv/' \
+         --include 'deps/uv/include/' \
+         --include 'deps/uv/include/uv-private/' \
          --include 'deps/zlib/' \
          --include 'deps/zlib/contrib/' \
          --include 'deps/zlib/contrib/minizip/' \
@@ -42,12 +51,13 @@ rm "$TARGET_FOLDER/config.gypi"
 
 # Make a fake node tarball
 cd "$TEMP_STORE"
-tar zcf "$TEMP_STORE/node-v$NODE_VERSION.tar.gz" "node-v$NODE_VERSION"
+tar zcf "$TEMP_STORE/node-$NODE_VERSION.tar.gz" "node-$NODE_VERSION"
 
-# TODO
 # Upload it to S3
+S3_TARGET="s3://$BUCKET/cefode/dist/$NODE_VERSION/node-$NODE_VERSION.tar.gz"
+s3cmd put "$TEMP_STORE/node-$NODE_VERSION.tar.gz" $S3_TARGET \
+&& \
+s3cmd setacl --acl-public $S3_TARGET
 
-ls $TEMP_STORE
-
-# TODO
 # Clean after upload
+rm -rf "$TEMP_STORE"
