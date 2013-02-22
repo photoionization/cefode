@@ -11,6 +11,15 @@ source "$ROOT/script/bash_utils"
 has_command python || fail 'python is required to build cefode'
 has_command git || fail 'git is required to build cefode'
 
+if [[ $OS == 'Ubuntu' ]]; then
+  progress 'Installing system dependencies'
+  INSTALL_SCRIPT=`mktemp`
+  curl -sL https://raw.github.com/zcbenz/cefode-chromium/master/build/install-build-deps.sh > $INSTALL_SCRIPT
+  echo | bash $INSTALL_SCRIPT # Pass an ENTER to the script
+  rm $INSTALL_SCRIPT
+  success 'Dependencies installed'
+fi
+
 if [ ! -e "$ROOT/depot_tools" ]; then
   progress 'Getting depot_tools'
   if git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git "$ROOT/depot_tools"
