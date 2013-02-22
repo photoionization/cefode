@@ -3,5 +3,6 @@
 console.log
 src/
 depot_tools/
+s3cmd/
 test/node_modules/
 patch/patch_state.h

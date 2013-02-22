@@ -53,11 +53,17 @@ rm "$TARGET_FOLDER/config.gypi"
 cd "$TEMP_STORE"
 tar zcf "$TEMP_STORE/node-$NODE_VERSION.tar.gz" "node-$NODE_VERSION"
 
+# Download S3
+S3CMD=s3cmd
+if ! has_command s3cmd; then
+  S3CMD="$ROOT/s3cmd/s3cmd"
+  [ -f "$S3CMD" ] || git clone https://github.com/s3tools/s3cmd.git "$ROOT/s3cmd"
+fi
+
 # Upload it to S3
 S3_TARGET="s3://$BUCKET/cefode/dist/$NODE_VERSION/node-$NODE_VERSION.tar.gz"
-s3cmd put "$TEMP_STORE/node-$NODE_VERSION.tar.gz" $S3_TARGET \
-&& \
-s3cmd setacl --acl-public $S3_TARGET
+"$S3CMD" put --acl-public "$TEMP_STORE/node-$NODE_VERSION.tar.gz" $S3_TARGET
 
 # Clean after upload
 rm -rf "$TEMP_STORE"
+
