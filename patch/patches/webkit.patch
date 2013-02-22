@@ -136,7 +136,7 @@ Index: Source/WebCore/workers/WorkerRunLoop.cpp
  {
  }
  
-@@ -128,12 +139,59 @@ private:
+@@ -128,12 +139,60 @@ private:
  
  void WorkerRunLoop::run(WorkerContext* context)
  {
@@ -195,10 +195,11 @@ Index: Source/WebCore/workers/WorkerRunLoop.cpp
 +
 +    // Cleanup.
 +    uv_loop_delete(m_loop);
++    m_loop = NULL;
      runCleanupTasks(context);
  }
  
-@@ -168,8 +226,6 @@ MessageQueueWaitResult WorkerRunLoop::runInMode(WorkerContext* context, const Mo
+@@ -168,8 +227,6 @@ MessageQueueWaitResult WorkerRunLoop::runInMode(WorkerContext* context, const Mo
          break;
  
      case MessageQueueTimeout:
@@ -207,7 +208,7 @@ Index: Source/WebCore/workers/WorkerRunLoop.cpp
          break;
      }
  
-@@ -203,6 +259,9 @@ void WorkerRunLoop::postTask(PassOwnPtr<ScriptExecutionContext::Task> task)
+@@ -203,6 +260,9 @@ void WorkerRunLoop::postTask(PassOwnPtr<ScriptExecutionContext::Task> task)
  
  void WorkerRunLoop::postTaskForMode(PassOwnPtr<ScriptExecutionContext::Task> task, const String& mode)
  {
