@@ -1,4 +1,5 @@
 .gclient_entries
+*.swp
 console.log
 src/
 depot_tools/
