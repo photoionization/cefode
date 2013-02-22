@@ -76,15 +76,21 @@ describe('node', function() {
   });
 
   describe('child_process', function() {
-    var exec = require('child_process').exec;
+    var child_process = require('child_process');
 
     it('echo back', function(done) {
-      var child = exec('echo echo back', function (error, stdout, stderr) {
+      var child = child_process.exec('echo echo back', function (error, stdout, stderr) {
         assert.equal(error, null);
         assert.equal(stdout, process.platform == 'win32' ? 'echo back\r\n' : 'echo back\n');
         assert.equal(stderr, '');
         done();
       });
+    });
+
+    it('fork not implemented', function() {
+      assert.throws(function() {
+        child_process.fork('fake.js');
+      }, 'child_process.fork is not supported in cefode, use web workers instead.');
     });
   });
 
@@ -137,7 +143,7 @@ describe('node', function() {
       var port = 20988;
       var host = 'localhost';
 
-      var N = 50;
+      var N = 10;
       var count = 0;
       var sentPongs = 0;
       var sent_final_ping = false;
