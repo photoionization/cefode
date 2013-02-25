@@ -208,7 +208,15 @@ Index: Source/WebCore/workers/WorkerRunLoop.cpp
          break;
      }
  
-@@ -208,6 +265,9 @@ void WorkerRunLoop::postTaskAndTerminate(PassOwnPtr<ScriptExecutionContext::Task
+@@ -203,11 +260,17 @@ void WorkerRunLoop::postTask(PassOwnPtr<ScriptExecutionContext::Task> task)
+ 
+ void WorkerRunLoop::postTaskAndTerminate(PassOwnPtr<ScriptExecutionContext::Task> task)
+ {
++    if (m_loop)
++        uv_async_send(&m_wakeup_event);
++
+     m_messageQueue.appendAndKill(Task::create(task, defaultMode().isolatedCopy()));
+ }
  
  void WorkerRunLoop::postTaskForMode(PassOwnPtr<ScriptExecutionContext::Task> task, const String& mode)
  {
