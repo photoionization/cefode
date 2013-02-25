@@ -99,7 +99,7 @@ Index: Source/WebCore/bindings/v8/WorkerScriptController.cpp
 +
 +    v8::Handle<v8::Value> args[2] = {
 +        v8::Local<v8::Value>::New(process),
-+        v8String(m_workerContext->url().path())
++        v8String(m_workerContext->url().path(), context->GetIsolate())
 +    };
 +    v8::Local<v8::Function>::Cast(result)->Call(context->Global(), 2, args);
 +    if (try_catch.HasCaught()) {
