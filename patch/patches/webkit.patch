@@ -25,24 +25,24 @@ Index: Source/WebCore/bindings/v8/ScriptController.cpp
  namespace WebCore {
  
  void ScriptController::initializeThreading()
-@@ -417,6 +421,9 @@ void ScriptController::evaluateInIsolatedWorld(int worldID, const Vector<ScriptS
+@@ -418,6 +422,9 @@ void ScriptController::evaluateInIsolatedWorld(int worldID, const Vector<ScriptS
  
  bool ScriptController::shouldBypassMainWorldContentSecurityPolicy()
  {
 +    if (v8::Context::GetEntered() == node::g_context)
 +        return true;
 +
-     if (DOMWrapperWorld* world = worldForEnteredContextIfIsolated())
+     if (DOMWrapperWorld* world = worldForEnteredContext())
          return world->isolatedWorldHasContentSecurityPolicy();
      return false;
-@@ -445,6 +452,9 @@ v8::Local<v8::Context> ScriptController::currentWorldContext()
+@@ -446,6 +453,9 @@ v8::Local<v8::Context> ScriptController::currentWorldContext()
          return contextForWorld(this, mainThreadNormalWorld());
  
      v8::Handle<v8::Context> context = v8::Context::GetEntered();
 +    if (v8::Context::GetEntered() == node::g_context)
 +        return contextForWorld(this, mainThreadNormalWorld());
 +
-     DOMWrapperWorld* isolatedWorld = DOMWrapperWorld::isolated(context);
+     DOMWrapperWorld* isolatedWorld = DOMWrapperWorld::getWorld(context);
      if (!isolatedWorld)
          return contextForWorld(this, mainThreadNormalWorld());
 Index: Source/WebCore/bindings/v8/WorkerScriptController.cpp
@@ -208,7 +208,7 @@ Index: Source/WebCore/workers/WorkerRunLoop.cpp
          break;
      }
  
-@@ -203,6 +260,9 @@ void WorkerRunLoop::postTask(PassOwnPtr<ScriptExecutionContext::Task> task)
+@@ -208,6 +265,9 @@ void WorkerRunLoop::postTaskAndTerminate(PassOwnPtr<ScriptExecutionContext::Task
  
  void WorkerRunLoop::postTaskForMode(PassOwnPtr<ScriptExecutionContext::Task> task, const String& mode)
  {
@@ -231,7 +231,7 @@ Index: Source/WebCore/workers/WorkerRunLoop.h
  namespace WebCore {
  
      class ModePredicate;
-@@ -94,6 +96,9 @@ namespace WebCore {
+@@ -95,6 +97,9 @@ namespace WebCore {
          OwnPtr<WorkerSharedTimer> m_sharedTimer;
          int m_nestedCount;
          unsigned long m_uniqueId;
