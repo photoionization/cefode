@@ -1,15 +1,3 @@
-Index: Source/WebCore/WebCore.gyp/WebCore.gyp
-===================================================================
---- Source/WebCore/WebCore.gyp/WebCore.gyp	(revision 0)
-+++ Source/WebCore/WebCore.gyp/WebCore.gyp	(working copy)
-@@ -2064,6 +2064,7 @@
-       'target_name': 'webcore_remaining',
-       'type': 'static_library',
-       'dependencies': [
-+        '<(chromium_src_dir)/third_party/node/node.gyp:node',
-         '<(chromium_src_dir)/third_party/v8-i18n/build/all.gyp:v8-i18n',
-         'webcore_prerequisites',
-       ],
 Index: Source/WebCore/bindings/v8/ScriptController.cpp
 ===================================================================
 --- Source/WebCore/bindings/v8/ScriptController.cpp	(revision 0)
@@ -49,18 +37,20 @@ Index: Source/WebCore/bindings/v8/WorkerScriptController.cpp
 ===================================================================
 --- Source/WebCore/bindings/v8/WorkerScriptController.cpp	(revision 0)
 +++ Source/WebCore/bindings/v8/WorkerScriptController.cpp	(working copy)
-@@ -55,6 +55,10 @@
+@@ -55,6 +55,12 @@
  #include <public/WebWorkerScriptObserver.h>
  #endif
  
-+#include "node.h"
-+#include "node_vars.h"
-+#include "node_javascript.h"
++namespace node {
++void globals_free();
++v8::Handle<v8::String> CefodeWorkerMainSource();
++v8::Handle<v8::Object> SetupProcessObject(v8::Handle<v8::Object> process, int argc, char *argv[], bool is_worker = false);
++}
 +
  namespace WebCore {
  
  namespace {
-@@ -96,6 +100,7 @@ WorkerScriptController::~WorkerScriptController()
+@@ -96,6 +102,7 @@ WorkerScriptController::~WorkerScriptController()
      V8PerIsolateData::dispose(m_isolate);
      m_isolate->Exit();
      m_isolate->Dispose();
@@ -68,7 +58,7 @@ Index: Source/WebCore/bindings/v8/WorkerScriptController.cpp
  }
  
  void WorkerScriptController::disposeContext()
-@@ -114,6 +119,9 @@ bool WorkerScriptController::initializeContextIfNeeded()
+@@ -114,6 +121,9 @@ bool WorkerScriptController::initializeContextIfNeeded()
      if (m_context.isEmpty())
          return false;
  
@@ -78,7 +68,7 @@ Index: Source/WebCore/bindings/v8/WorkerScriptController.cpp
      // Starting from now, use local context only.
      v8::Local<v8::Context> context = v8::Local<v8::Context>::New(m_context.get());
  
-@@ -147,6 +155,31 @@ bool WorkerScriptController::initializeContextIfNeeded()
+@@ -147,6 +157,31 @@ bool WorkerScriptController::initializeContextIfNeeded()
      v8::Handle<v8::Object> globalObject = v8::Handle<v8::Object>::Cast(m_context->Global()->GetPrototype());
      globalObject->SetPrototype(jsWorkerContext);
  
