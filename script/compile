@@ -18,7 +18,7 @@ if [[ $PLATFORM == 'linux-gnu' ]]; then
 fi
 
 if [[ $PLATFORM == 'darwin' ]]
-then xcodebuild -project "$ROOT/src/cef/cef.xcodeproj" -configuration $MODE -target cefclient
+then xcodebuild -PBXBuildsContinueAfterErrors=0 -project "$ROOT/src/cef/cef.xcodeproj" -configuration $MODE -target cefclient
 else bash "$ROOT/depot_tools/ninja" -C "$ROOT/src/out/$MODE" -j$CORES cefclient
 fi
 
