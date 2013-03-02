@@ -14,9 +14,12 @@ MODE=${1:-'Release'}
 # Include utils
 source "$ROOT/script/bash_utils"
 
-if [ ! -f "$ROOT/src/out/$MODE/cefclient" ]; then
-  fail 'cefode has not been built'
-fi
+# Path to cefclient
+case $PLATFORM in
+  darwin) CEFCLIENT="$ROOT/src/xcodebuild/$MODE/cefclient.app/Contents/MacOS/cefclient" ;;
+  linux-gnu) CEFCLIENT="$ROOT/src/out/$MODE/cefclient" ;;
+  *) fail 'Unsupported platform' ;;
+esac
 
 if [ ! -d "$ROOT/test/node_modules" ]; then
   has_command npm || fail 'npm is required'
@@ -30,16 +33,7 @@ if [ ! -d "$ROOT/test/node_modules" ]; then
   popd > /dev/null
 fi
 
-if [[ $PLATFORM == 'linux-gnu' ]]; then
-  "$ROOT/src/out/$MODE/cefclient" --url=$PAGE_URL\
-                                  --remote-debugging-port=51127\
-                                  --allow-file-access-from-files
-elif [[ $PLATFORM == 'darwin' ]]; then
-  "$ROOT/src/xcodebuild/$MODE/cefclient.app/Contents/MacOS/cefclient"\
-                                  --url=$PAGE_URL\
-                                  --remote-debugging-port=51127\
-                                  --allow-file-access-from-files
-else
-  fail 'Other platform unsupported yet'
-fi
+$CEFCLIENT --url=$PAGE_URL \
+           --remote-debugging-port=51127 \
+           --allow-file-access-from-files
 
