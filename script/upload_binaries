@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# Root of cefode
+ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
+
+# Include utils
+source "$ROOT/script/bash_utils"
+
+BUCKET=$1
+[ -z $BUCKET ] && fail 'Must provide bucket name'
+
+# Make binary distribution
+cd "$ROOT/src/cef/tools/"
+./make_distrib.sh
+
+# Download S3
+S3CMD=s3cmd
+if ! has_command s3cmd; then
+  S3CMD="$ROOT/s3cmd/s3cmd"
+  [ -f "$S3CMD" ] || git clone https://github.com/s3tools/s3cmd.git "$ROOT/s3cmd"
+fi
+
+# Upload it to S3
+DISTRIB_DIR="${ROOT}/src/cef/binary_distrib"
+S3_TARGET="s3://$BUCKET/cefode/prebuilt-cef/"
+"$S3CMD" put --acl-public "$DISTRIB_DIR"/*.zip $S3_TARGET
+
