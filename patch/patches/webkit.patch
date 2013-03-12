@@ -1,7 +1,7 @@
-Index: b/Source/WebCore/bindings/v8/ScriptController.cpp
+Index: Source/WebCore/bindings/v8/ScriptController.cpp
 ===================================================================
---- a/Source/WebCore/bindings/v8/ScriptController.cpp	(revision 0)
-+++ b/Source/WebCore/bindings/v8/ScriptController.cpp	(working copy)
+--- Source/WebCore/bindings/v8/ScriptController.cpp	(revision 0)
++++ Source/WebCore/bindings/v8/ScriptController.cpp	(working copy)
 @@ -77,6 +77,10 @@
  #include "TraceEvent.h"
  #endif
@@ -33,10 +33,10 @@ Index: b/Source/WebCore/bindings/v8/ScriptController.cpp
      DOMWrapperWorld* isolatedWorld = DOMWrapperWorld::getWorld(context);
      if (!isolatedWorld)
          return contextForWorld(this, mainThreadNormalWorld());
-Index: b/Source/WebCore/bindings/v8/WorkerScriptController.cpp
+Index: Source/WebCore/bindings/v8/WorkerScriptController.cpp
 ===================================================================
---- a/Source/WebCore/bindings/v8/WorkerScriptController.cpp	(revision 0)
-+++ b/Source/WebCore/bindings/v8/WorkerScriptController.cpp	(working copy)
+--- Source/WebCore/bindings/v8/WorkerScriptController.cpp	(revision 0)
++++ Source/WebCore/bindings/v8/WorkerScriptController.cpp	(working copy)
 @@ -55,6 +55,12 @@
  #include <public/WebWorkerScriptObserver.h>
  #endif
@@ -100,10 +100,10 @@ Index: b/Source/WebCore/bindings/v8/WorkerScriptController.cpp
      notifyDidCreateWorkerScriptContext();
  
      return true;
-Index: b/Source/WebCore/workers/WorkerRunLoop.cpp
+Index: Source/WebCore/workers/WorkerRunLoop.cpp
 ===================================================================
---- a/Source/WebCore/workers/WorkerRunLoop.cpp	(revision 0)
-+++ b/Source/WebCore/workers/WorkerRunLoop.cpp	(working copy)
+--- Source/WebCore/workers/WorkerRunLoop.cpp	(revision 0)
++++ Source/WebCore/workers/WorkerRunLoop.cpp	(working copy)
 @@ -88,10 +88,21 @@ private:
      bool m_defaultMode;
  };
@@ -220,10 +220,10 @@ Index: b/Source/WebCore/workers/WorkerRunLoop.cpp
      m_messageQueue.append(Task::create(task, mode.isolatedCopy()));
  }
  
-Index: b/Source/WebCore/workers/WorkerRunLoop.h
+Index: Source/WebCore/workers/WorkerRunLoop.h
 ===================================================================
---- a/Source/WebCore/workers/WorkerRunLoop.h	(revision 0)
-+++ b/Source/WebCore/workers/WorkerRunLoop.h	(working copy)
+--- Source/WebCore/workers/WorkerRunLoop.h	(revision 0)
++++ Source/WebCore/workers/WorkerRunLoop.h	(working copy)
 @@ -38,6 +38,8 @@
  #include <wtf/OwnPtr.h>
  #include <wtf/PassOwnPtr.h>
