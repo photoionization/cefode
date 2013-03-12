@@ -35,5 +35,6 @@ fi
 
 $CEFCLIENT --url=$PAGE_URL \
            --remote-debugging-port=51127 \
+           --no-sandbox \
            --allow-file-access-from-files
 
