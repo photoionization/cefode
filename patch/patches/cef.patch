@@ -1,0 +1,25 @@
+Index: libcef/browser/url_request_context_getter.cc
+===================================================================
+--- libcef/browser/url_request_context_getter.cc	(revision 1135)
++++ libcef/browser/url_request_context_getter.cc	(working copy)
+@@ -107,14 +107,12 @@
+     storage_->set_host_resolver(net::HostResolver::CreateDefaultResolver(NULL));
+     storage_->set_cert_verifier(net::CertVerifier::CreateDefault());
+ 
+-    scoped_ptr<net::ProxyService> system_proxy_service;
+-    system_proxy_service.reset(
+-        ProxyServiceFactory::CreateProxyService(
+-            NULL,
+-            url_request_context_.get(),
+-            _Context->proxy_config_service().release(),
+-            command_line));
+-    storage_->set_proxy_service(system_proxy_service.release());
++    storage_->set_proxy_service(
++        net::ProxyService::CreateUsingSystemProxyResolver(
++        net::ProxyService::CreateSystemProxyConfigService(
++            io_loop_->message_loop_proxy(), file_loop_),
++        0,
++        NULL));
+ 
+     storage_->set_ssl_config_service(new net::SSLConfigServiceDefaults);
+ 
