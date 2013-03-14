@@ -33,6 +33,63 @@ Index: Source/WebCore/bindings/v8/ScriptController.cpp
      DOMWrapperWorld* isolatedWorld = DOMWrapperWorld::getWorld(context);
      if (!isolatedWorld)
          return contextForWorld(this, mainThreadNormalWorld());
+Index: Source/WebCore/bindings/v8/V8Initializer.cpp
+===================================================================
+--- Source/WebCore/bindings/v8/V8Initializer.cpp	(revision 0)
++++ Source/WebCore/bindings/v8/V8Initializer.cpp	(working copy)
+@@ -44,6 +44,10 @@
+ #include <wtf/RefPtr.h>
+ #include <wtf/text/WTFString.h>
+ 
++namespace node {
++extern v8::Persistent<v8::Context> g_context;
++}
++
+ namespace WebCore {
+ 
+ static Frame* findFrame(v8::Local<v8::Object> host, v8::Local<v8::Value> data, v8::Isolate* isolate)
+@@ -77,6 +81,31 @@ static void reportFatalErrorInMainThread(const char* location, const char* messa
+ 
+ static void messageHandlerInMainThread(v8::Handle<v8::Message> message, v8::Handle<v8::Value> data)
+ {
++    // Dark corner of cefode here:
++    //
++    // Usually when you throw exceptions in the callback of node's native module, you are under
++    // node's context, and WebKit will crash because it wants to find the troubling window from
++    // current context, which however doesn't belong to any window.
++    //
++    // So we did a hack here when current context is node context, we switch to the creation 
++    // context of the exception, so everything will work fine.
++    //
++    // But if you throw a value instead of a object, we will fail.
++    v8::Handle<v8::Context> exception_context;
++    if (node::g_context == v8::Context::GetCurrent()) {
++      if (data->IsObject()) {
++        fprintf(stderr, "Warning: entering creation context of exception.\n");
++        v8::Handle<v8::Object> exception = data->ToObject();
++        exception_context = exception->CreationContext();
++        exception_context->Enter();
++      } else {
++        v8::String::Utf8Value error(message->Get());
++        fprintf(stderr, "Unprinted exception here: %s\n"
++                        "Please throw objects instead of values.\n", *error);
++        return; // Cannot determine the source of exception.
++      }
++    }
++
+     DOMWindow* firstWindow = firstDOMWindow(BindingState::instance());
+     if (!firstWindow->isCurrentlyDisplayedInFrame())
+         return;
+@@ -93,6 +122,9 @@ static void messageHandlerInMainThread(v8::Handle<v8::Message> message, v8::Hand
+     bool shouldUseDocumentURL = resourceName.IsEmpty() || !resourceName->IsString();
+     String resource = shouldUseDocumentURL ? firstWindow->document()->url() : toWebCoreString(resourceName);
+     firstWindow->document()->reportException(errorMessage, message->GetLineNumber(), resource, callStack);
++
++    if (!exception_context.IsEmpty())
++        exception_context->Exit();
+ }
+ 
+ static void failedAccessCheckCallbackInMainThread(v8::Local<v8::Object> host, v8::AccessType type, v8::Local<v8::Value> data)
 Index: Source/WebCore/bindings/v8/WorkerScriptController.cpp
 ===================================================================
 --- Source/WebCore/bindings/v8/WorkerScriptController.cpp	(revision 0)
@@ -243,3 +300,17 @@ Index: Source/WebCore/workers/WorkerRunLoop.h
      };
  
  } // namespace WebCore
+Index: Source/WebKit/chromium/src/WebKit.cpp
+===================================================================
+--- Source/WebKit/chromium/src/WebKit.cpp	(revision 0)
++++ Source/WebKit/chromium/src/WebKit.cpp	(working copy)
+@@ -105,7 +105,9 @@ static bool generateEntropy(unsigned char* buffer, size_t length)
+ #ifndef NDEBUG
+ static void assertV8RecursionScope()
+ {
++#if 0
+     ASSERT(!isMainThread() || WebCore::V8RecursionScope::properlyUsed());
++#endif
+ }
+ #endif
+ 
