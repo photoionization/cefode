@@ -37,10 +37,14 @@ Index: Source/WebCore/bindings/v8/V8Initializer.cpp
 ===================================================================
 --- Source/WebCore/bindings/v8/V8Initializer.cpp	(revision 0)
 +++ Source/WebCore/bindings/v8/V8Initializer.cpp	(working copy)
-@@ -44,6 +44,10 @@
+@@ -44,6 +44,14 @@
  #include <wtf/RefPtr.h>
  #include <wtf/text/WTFString.h>
  
++namespace content {
++extern bool EnterFirstWindowContext();
++}
++
 +namespace node {
 +extern v8::Persistent<v8::Context> g_context;
 +}
@@ -48,12 +52,51 @@ Index: Source/WebCore/bindings/v8/V8Initializer.cpp
  namespace WebCore {
  
  static Frame* findFrame(v8::Local<v8::Object> host, v8::Local<v8::Value> data, v8::Isolate* isolate)
-@@ -77,6 +81,31 @@ static void reportFatalErrorInMainThread(const char* location, const char* messa
+@@ -68,6 +76,40 @@ static Frame* findFrame(v8::Local<v8::Object> host, v8::Local<v8::Value> data, v
+     return 0;
+ }
+ 
++static void reportNodeException(v8::Handle<v8::Message> message, v8::Handle<v8::Value> data)
++{
++  v8::HandleScope scope;
++
++  fprintf(stderr, "\n");
++
++  if (!message.IsEmpty()) {
++    // Print error name.
++    v8::String::Utf8Value error(message->Get());
++    fprintf(stderr, "%s\n", *error);
++    // Print (filename):(line number): (message).
++    v8::String::Utf8Value filename(message->GetScriptResourceName());
++    const char* filename_string = *filename;
++    int linenum = message->GetLineNumber();
++    fprintf(stderr, "%s:%i\n", filename_string, linenum);
++    // Print line of source code.
++    v8::String::Utf8Value sourceline(message->GetSourceLine());
++    const char* sourceline_string = *sourceline;
++
++    int start = message->GetStartColumn();
++    int end = message->GetEndColumn();
++
++    fprintf(stderr, "%s\n", sourceline_string);
++    // Print wavy underline (GetUnderline is deprecated).
++    for (int i = 0; i < start; i++) {
++      fputc((sourceline_string[i] == '\t') ? '\t' : ' ', stderr);
++    }
++    for (int i = start; i < end; i++) {
++      fputc('^', stderr);
++    }
++    fputc('\n', stderr);
++  }
++}
++
+ static void reportFatalErrorInMainThread(const char* location, const char* message)
+ {
+     int memoryUsageMB = MemoryUsageSupport::actualMemoryUsageMB();
+@@ -77,6 +119,34 @@ static void reportFatalErrorInMainThread(const char* location, const char* messa
  
  static void messageHandlerInMainThread(v8::Handle<v8::Message> message, v8::Handle<v8::Value> data)
  {
-+    // Dark corner of cefode here:
-+    //
 +    // Usually when you throw exceptions in the callback of node's native module, you are under
 +    // node's context, and WebKit will crash because it wants to find the troubling window from
 +    // current context, which however doesn't belong to any window.
@@ -62,31 +105,37 @@ Index: Source/WebCore/bindings/v8/V8Initializer.cpp
 +    // context of the exception, so everything will work fine.
 +    //
 +    // But if you throw a value instead of a object, we will fail.
-+    v8::Handle<v8::Context> exception_context;
 +    if (node::g_context == v8::Context::GetCurrent()) {
 +      if (data->IsObject()) {
-+        fprintf(stderr, "Warning: entering creation context of exception.\n");
 +        v8::Handle<v8::Object> exception = data->ToObject();
-+        exception_context = exception->CreationContext();
-+        exception_context->Enter();
++        v8::Handle<v8::Context> exception_context = exception->CreationContext();
++        if (node::g_context == exception_context) {
++          reportNodeException(message, data);
++          if (!content::EnterFirstWindowContext())
++            return;
++        } else {
++          fprintf(stderr, "Warning: entering creation context of exception.\n");
++          exception_context->Enter();
++        }
 +      } else {
-+        v8::String::Utf8Value error(message->Get());
-+        fprintf(stderr, "Unprinted exception here: %s\n"
-+                        "Please throw objects instead of values.\n", *error);
-+        return; // Cannot determine the source of exception.
++        if (!content::EnterFirstWindowContext()) {
++          reportNodeException(message, data);
++          return;
++        }
 +      }
 +    }
 +
      DOMWindow* firstWindow = firstDOMWindow(BindingState::instance());
      if (!firstWindow->isCurrentlyDisplayedInFrame())
          return;
-@@ -93,6 +122,9 @@ static void messageHandlerInMainThread(v8::Handle<v8::Message> message, v8::Hand
+@@ -93,6 +163,10 @@ static void messageHandlerInMainThread(v8::Handle<v8::Message> message, v8::Hand
      bool shouldUseDocumentURL = resourceName.IsEmpty() || !resourceName->IsString();
      String resource = shouldUseDocumentURL ? firstWindow->document()->url() : toWebCoreString(resourceName);
      firstWindow->document()->reportException(errorMessage, message->GetLineNumber(), resource, callStack);
 +
-+    if (!exception_context.IsEmpty())
-+        exception_context->Exit();
++    v8::Handle<v8::Context> current_context = v8::Context::GetCurrent();
++    if (node::g_context != current_context)
++       current_context->Exit();
  }
  
  static void failedAccessCheckCallbackInMainThread(v8::Local<v8::Object> host, v8::AccessType type, v8::Local<v8::Value> data)
