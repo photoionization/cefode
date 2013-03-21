@@ -93,7 +93,7 @@ Index: Source/WebCore/bindings/v8/V8Initializer.cpp
  static void reportFatalErrorInMainThread(const char* location, const char* message)
  {
      int memoryUsageMB = MemoryUsageSupport::actualMemoryUsageMB();
-@@ -77,6 +119,34 @@ static void reportFatalErrorInMainThread(const char* location, const char* messa
+@@ -77,6 +119,36 @@ static void reportFatalErrorInMainThread(const char* location, const char* messa
  
  static void messageHandlerInMainThread(v8::Handle<v8::Message> message, v8::Handle<v8::Value> data)
  {
@@ -105,7 +105,9 @@ Index: Source/WebCore/bindings/v8/V8Initializer.cpp
 +    // context of the exception, so everything will work fine.
 +    //
 +    // But if you throw a value instead of a object, we will fail.
++    bool need_quit = false;
 +    if (node::g_context == v8::Context::GetCurrent()) {
++      need_quit = true;
 +      if (data->IsObject()) {
 +        v8::Handle<v8::Object> exception = data->ToObject();
 +        v8::Handle<v8::Context> exception_context = exception->CreationContext();
@@ -128,13 +130,13 @@ Index: Source/WebCore/bindings/v8/V8Initializer.cpp
      DOMWindow* firstWindow = firstDOMWindow(BindingState::instance());
      if (!firstWindow->isCurrentlyDisplayedInFrame())
          return;
-@@ -93,6 +163,10 @@ static void messageHandlerInMainThread(v8::Handle<v8::Message> message, v8::Hand
+@@ -93,6 +165,10 @@ static void messageHandlerInMainThread(v8::Handle<v8::Message> message, v8::Hand
      bool shouldUseDocumentURL = resourceName.IsEmpty() || !resourceName->IsString();
      String resource = shouldUseDocumentURL ? firstWindow->document()->url() : toWebCoreString(resourceName);
      firstWindow->document()->reportException(errorMessage, message->GetLineNumber(), resource, callStack);
 +
 +    v8::Handle<v8::Context> current_context = v8::Context::GetCurrent();
-+    if (node::g_context != current_context)
++    if (need_quit && node::g_context != current_context)
 +       current_context->Exit();
  }
  
