@@ -1,3 +1,16 @@
+Index: libcef/browser/content_browser_client.cc
+===================================================================
+--- libcef/browser/content_browser_client.cc	(revision 1135)
++++ libcef/browser/content_browser_client.cc	(working copy)
+@@ -277,7 +277,7 @@
+     }
+   }
+ 
+-  NOTREACHED();
++  // NOTREACHED();
+ }
+ 
+ void CefContentBrowserClient::DestroyAllBrowsers() {
 Index: libcef/browser/url_request_context_getter.cc
 ===================================================================
 --- libcef/browser/url_request_context_getter.cc	(revision 1135)
@@ -23,3 +36,16 @@ Index: libcef/browser/url_request_context_getter.cc
  
      storage_->set_ssl_config_service(new net::SSLConfigServiceDefaults);
  
+Index: libcef/browser/browser_host_impl.cc
+===================================================================
+--- libcef/browser/browser_host_impl.cc	(revision 1135)
++++ libcef/browser/browser_host_impl.cc	(working copy)
+@@ -1037,7 +1037,7 @@
+ }
+ 
+ void CefBrowserHostImpl::DestroyBrowser() {
+-  CEF_REQUIRE_UIT();
++  // CEF_REQUIRE_UIT();
+ 
+   if (client_.get()) {
+     CefRefPtr<CefLifeSpanHandler> handler = client_->GetLifeSpanHandler();
